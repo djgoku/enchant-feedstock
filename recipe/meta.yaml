@@ -10,7 +10,7 @@ source:
   sha256: 8f19535adb5577b83b00e02f330fe9b9eb40dd21f19e2899636fc4d3a7696375
 
 build:
-  number: 0
+  number: 1
   skip: true  # [not unix]
   run_exports:
     - {{ pin_subpackage('enchant', max_pin='x.x') }}
@@ -39,6 +39,9 @@ requirements:
 test:
   commands:
     - enchant-2 -v  # [unix]
+    # Regression guard: the package must actually ship its providers.
+    - test -f $PREFIX/lib/enchant-2/enchant_hunspell.so  # [unix]
+    - test -f $PREFIX/lib/enchant-2/enchant_applespell.so  # [osx]
 
 about:
   home: https://rrthomas.github.io/enchant/
