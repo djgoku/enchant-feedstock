@@ -26,6 +26,25 @@ build:
     export GLIB_CFLAGS="-I${PREFIX}/include/glib-2.0 -I${PREFIX}/lib/glib-2.0/include"
     export GLIB_LIBS="-L${PREFIX}/lib -lglib-2.0 -lgobject-2.0 -lgmodule-2.0 -lgio-2.0"
     ./configure --prefix="${PREFIX}" --disable-static --enable-relocatable --disable-vala --with-applespell LDFLAGS="-Wl,-rpath,${PREFIX}/lib"
+    # misemacs: make libenchant self-relocate from its OWN location (dladdr) so its
+    # dlopen'd providers resolve when libenchant is loaded by a foreign executable
+    # (Emacs/jinx) from a relocated app bundle -- gnulib's --enable-relocatable only
+    # retargets for enchant's own programs. Appends a constructor that calls the
+    # existing public enchant_set_prefix_dir() with <dir-of-libenchant>/.. .
+    cat >> lib/api.c <<'EOF'
+    #include <dlfcn.h>
+    #include <string.h>
+    __attribute__((constructor))
+    static void misemacs_enchant_self_relocate(void) {
+    Dl_info di;
+    if (!dladdr((void *) enchant_set_prefix_dir, &di) || di.dli_fname == NULL) return;
+    char b[4096];
+    strncpy(b, di.dli_fname, sizeof b - 1); b[sizeof b - 1] = '\0';
+    char *p = strrchr(b, '/'); if (p == NULL) return; *p = '\0';   /* strip /libenchant-2.2.dylib */
+    p = strrchr(b, '/'); if (p == NULL) return; *p = '\0';          /* strip /lib */
+    enchant_set_prefix_dir(b);
+    }
+    EOF
     make -j"${CPU_COUNT:-4}"
     make install
 
