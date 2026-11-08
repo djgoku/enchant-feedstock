@@ -33,7 +33,9 @@ requirements:
     - ${{ compiler('cxx') }}
     - ${{ stdlib("c") }}
   host:
-    - glib
+    # misemacs: libglib 2.90 needs libintl 1.x, and conda-forge gnutls 3.8.13 needs libintl <1.0.
+    # Lift once gnutls is rebuilt against libintl 1.x.
+    - glib <2.90
     - hunspell
     - zlib
   run:
