@@ -1,0 +1,33 @@
+Set the enchant prefix from libenchant's own path so relocated app bundles find providers.
+
+--- a/lib/api.c
++++ b/lib/api.c
+@@ -78,3 +78,28 @@
+ #line 79 "api.c"
+ }
+ 
++
++#include <dlfcn.h>
++#include <string.h>
++
++/* Set the prefix from libenchant's own location so dlopen'd providers and
++   dictionaries resolve when a foreign executable (Emacs/jinx) loads it from a
++   relocated bundle; gnulib relocation only covers enchant's own programs. */
++__attribute__((constructor))
++static void
++enchant_self_relocate (void)
++{
++	Dl_info di;
++	if (!dladdr ((void *) enchant_set_prefix_dir, &di) || di.dli_fname == NULL)
++		return;
++	char b[4096];
++	strncpy (b, di.dli_fname, sizeof b - 1);
++	b[sizeof b - 1] = '\0';
++	for (int i = 0; i < 2; i++) {
++		char *p = strrchr (b, '/');
++		if (p == NULL)
++			return;
++		*p = '\0';
++	}
++	enchant_set_prefix_dir (b);
++}

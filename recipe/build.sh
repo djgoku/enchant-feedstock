@@ -13,6 +13,7 @@ autoreconf -vfi
 ./configure --prefix=$PREFIX \
   --disable-static \
   --enable-relocatable \
-  --with-hunspell
+  --with-hunspell \
+  $([[ "$target_platform" == osx-* ]] && echo --with-applespell)
 make -j"${CPU_COUNT}"
 make install
